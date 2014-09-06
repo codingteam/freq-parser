@@ -1,12 +1,13 @@
 package ru.org.codingteam.freqparser
 
+import java.io.File
+
+import ru.org.codingteam.freqparser.ParseHelpers._
+
 import scala.collection.mutable
 import scala.io.Source
 import scala.slick.driver.H2Driver.simple._
 import scala.slick.jdbc.StaticQuery.interpolation
-
-import ParseHelpers._
-import java.io.File
 import scala.util.matching.Regex
 
 object Main {
@@ -24,7 +25,7 @@ object Main {
   }
 
   def convertLogFile(fileName: String, participants: mutable.HashSet[String])(implicit session: Session) = {
-    val content = Source.fromFile(fileName).mkString
+    val content = Source.fromFile(fileName, "UTF-8").mkString
 
     (extractRoomJid(content), extractDate(content)) match {
       case (Some(room), Some(date)) => extractRawMessages(content).foreach {
@@ -48,9 +49,14 @@ object Main {
   }
 
   def main(args: Array[String]) = {
+    val path = args match {
+      case Array(p) => p
+      case _ => "."
+    }
+
     implicit val participants = new mutable.HashSet[String]()
     Database.forURL("jdbc:h2:./hell", driver = "org.h2.Driver", user = "sa") withSession {
-      implicit session => for (logFile <- getLogFiles(".")) {
+      implicit session => for (logFile <- getLogFiles(path)) {
         convertLogFile(logFile, participants)
         println(s"[INFO] $logFile has been converted")
       }
