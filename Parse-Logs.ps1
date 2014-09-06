@@ -20,3 +20,5 @@ try {
 Copy-Item -Force $databasePath\$databaseFile .\$databaseFile
 
 sbt "run `"$logs`""
+
+Copy-Item -Force .\$databaseFile $databasePath\$databaseFile
