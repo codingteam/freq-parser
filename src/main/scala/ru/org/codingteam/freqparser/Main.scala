@@ -25,7 +25,7 @@ object Main {
   }
 
   def convertLogFile(fileName: String, participants: mutable.HashSet[String])(implicit session: Session) = {
-    val content = Source.fromFile(fileName).mkString
+    val content = Source.fromFile(fileName, "UTF-8").mkString
 
     (extractRoomJid(content), extractDate(content)) match {
       case (Some(room), Some(date)) => extractRawMessages(content).foreach {
