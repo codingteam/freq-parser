@@ -1,31 +1,32 @@
 package ru.org.codingteam.freqparser
 
 import org.apache.commons.lang3.StringEscapeUtils
+import org.joda.time.{LocalDate, LocalTime}
 
 import scala.collection.mutable
 
 object ParseHelpers {
 
-  type RawMessage = (String, String, String, String)
+  type RawMessage = (LocalTime, String, String, String)
 
   def extractRoomJid(content: String): Option[String] =
     "<a class=\"roomjid\".*>(.+?@.+?)</a>".r.findFirstMatchIn(content).map(_.group(1))
 
-  def extractDate(content: String): Option[String] =
+  def extractDate(content: String): Option[LocalDate] =
     "<div class=\"logdate\">(\\d{2}).(\\d{2}).(\\d{4})".r.findFirstMatchIn(content).map {
-      m => s"${m.group(3)}-${m.group(2)}-${m.group(1)}"
+      m => new LocalDate(m.group(3).toInt, m.group(2).toInt, m.group(1).toInt)
     }
 
   def extractRawMessages(content: String): Iterator[RawMessage] = {
     val rawMessagePattern =
-      "<a.*?>\\[(\\d{2}:\\d{2}:\\d{2})\\]</a> <font class=\"(.*?)\">(.*?)</font>(.*?)<br/>".r
+      "<a.*?>\\[(\\d{2}):(\\d{2}):(\\d{2})\\]</a> <font class=\"(.*?)\">(.*?)</font>(.*?)<br/>".r
 
     rawMessagePattern.findAllMatchIn(content).map(
       m => {
-        val time = m.group(1)
-        val messageClass = m.group(2)
-        val firstChunk = StringEscapeUtils.unescapeHtml4(m.group(3))
-        val secondChunk = StringEscapeUtils.unescapeHtml4(m.group(4))
+        val time = new LocalTime(m.group(1).toInt, m.group(2).toInt, m.group(3).toInt)
+        val messageClass = m.group(4)
+        val firstChunk = StringEscapeUtils.unescapeHtml4(m.group(5))
+        val secondChunk = StringEscapeUtils.unescapeHtml4(m.group(6))
         (time, messageClass, firstChunk, secondChunk)
       }
     )

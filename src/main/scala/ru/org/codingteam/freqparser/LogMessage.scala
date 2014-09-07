@@ -1,6 +1,8 @@
 package ru.org.codingteam.freqparser
 
-case class LogMessage(time: String,
+import org.joda.time.LocalTime
+
+case class LogMessage(time: LocalTime,
                       sender: String,
                       messageType: LogMessageType,
                       message: String)
