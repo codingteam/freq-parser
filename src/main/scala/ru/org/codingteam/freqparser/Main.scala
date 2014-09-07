@@ -1,12 +1,15 @@
 package ru.org.codingteam.freqparser
 
 import java.io.File
+import java.sql.Timestamp
 
+import org.joda.time.{DateTimeZone, DateTime}
 import ru.org.codingteam.freqparser.ParseHelpers._
 
 import scala.collection.mutable
 import scala.io.Source
 import scala.slick.driver.H2Driver.simple._
+import scala.slick.jdbc.GetResult
 import scala.slick.jdbc.StaticQuery.interpolation
 import scala.util.matching.Regex
 
@@ -33,12 +36,14 @@ object Main {
           case Some(LogMessage(time, sender, messageType, message)) => {
             participants.add(sender)
 
-            val timestamp = s"$date $time"
+            val timestamp =
+              new Timestamp(date.toDateTime(time, DateTimeZone.forID("Europe/Moscow")).toDateTime(DateTimeZone.UTC).getMillis)
+
             sqlu"""
-            INSERT INTO log (time, room, sender, type, message)
-            VALUES ($timestamp, ${room.take(255)},
-                  ${sender.take(255)}, ${messageType.toString}, $message)
-          """.first
+              INSERT INTO log (time, room, sender, type, message)
+              VALUES ($timestamp, ${room.take(255)},
+                      ${sender.take(255)}, ${messageType.toString}, $message)
+            """.first
           }
           case None => println(s"[WARNING] Cannot recognize a raw message: $rawMessage")
         }
@@ -54,7 +59,8 @@ object Main {
       case _ => "."
     }
 
-    implicit val participants = new mutable.HashSet[String]()
+    val participants = new mutable.HashSet[String]()
+
     Database.forURL("jdbc:h2:./hell", driver = "org.h2.Driver", user = "sa") withSession {
       implicit session => for (logFile <- getLogFiles(path)) {
         convertLogFile(logFile, participants)
